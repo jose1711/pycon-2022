@@ -1,3 +1,6 @@
+from http import HTTPStatus
+
+import requests
 from flask import Flask, jsonify, redirect, url_for
 
 # Create the Flask application
@@ -13,8 +16,12 @@ def hello():
 
 @app.get("/api/smart")
 def smart_api_requester():
-    """Implement me."""
-    return jsonify(success=True)
+    response = requests.get(BLOOMREACH_SERVER)
+
+    if response.status_code == HTTPStatus.OK:
+        return jsonify(success=True, response=response.json())
+    else:
+        return jsonify(success=False)
 
 
 if __name__ == "__main__":
