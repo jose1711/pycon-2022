@@ -1,5 +1,7 @@
 import asyncio
+import time
 from http import HTTPStatus
+
 from typing import TypeAlias
 
 from aiohttp import ClientSession, ContentTypeError
@@ -11,6 +13,8 @@ app = Flask(__name__)
 
 BLOOMREACH_SERVER = "https://exponea-engineering-assignment.appspot.com/api/work"
 
+WAIT_BEFORE_NEXT_REQUEST_SECONDS = 0.3
+
 
 @app.route("/")
 def hello():
@@ -20,7 +24,8 @@ def hello():
 Success: TypeAlias = bool
 
 
-async def fetch() -> tuple[Success, dict]:
+async def fetch(delay_seconds: float) -> tuple[Success, dict]:
+    await asyncio.sleep(delay_seconds)
     async with ClientSession() as session:
         try:
             async with session.get(BLOOMREACH_SERVER) as response:
@@ -58,15 +63,41 @@ def get_and_validate_timeout() -> None | float:
     return converted_timeout
 
 
+def out_of_time(timeout: None | float) -> bool:
+    return timeout is not None and timeout <= 0
+
+
 @app.get("/api/smart")
 async def smart_api_requester():
     timeout_seconds = get_and_validate_timeout()
-    try:
-        success, result = await asyncio.wait_for(fetch(), timeout=timeout_seconds)
-    except asyncio.TimeoutError:
+    unfinished_tasks = [
+        asyncio.create_task(fetch(delay_seconds=0)),
+        asyncio.create_task(fetch(delay_seconds=WAIT_BEFORE_NEXT_REQUEST_SECONDS)),
+        asyncio.create_task(fetch(delay_seconds=WAIT_BEFORE_NEXT_REQUEST_SECONDS)),
+    ]
+    timeout_remaining = timeout_seconds
+
+    while not out_of_time(timeout_remaining) and unfinished_tasks:
+        start = time.monotonic()
+        finished_tasks, unfinished_tasks = await asyncio.wait(
+            unfinished_tasks, return_when=asyncio.FIRST_COMPLETED, timeout=timeout_remaining
+        )
+
+        for finished_task in finished_tasks:
+            success, result = finished_task.result()
+            if success:
+                return jsonify(success=success, response=result)
+
+        end = time.monotonic()
+        timeout_remaining = timeout_remaining - (end - start) if timeout_remaining is not None else timeout_remaining
+
+    for unfinished_task in unfinished_tasks:
+        unfinished_task.cancel()
+
+    if out_of_time(timeout_remaining):
         raise RequestTimeout()
 
-    return jsonify(success=success, response=result)
+    return jsonify(success=False, response={})
 
 
 if __name__ == "__main__":
