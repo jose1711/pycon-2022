@@ -9,6 +9,8 @@ description: >- # this means to ignore newlines until
 
 version:          1.0
 gitbook_version:  3.2.3
+
+base_url: "/pycon-2022"
 rss:              RSS
 
 # bootstrap: use the remote theme for the site itself
