@@ -69,7 +69,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+docs-tmp/_build/
 
 # PyBuilder
 target/
@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+_site
+.sass-cache
+.jekyll-cache
+.jekyll-metadata
+vendor
+
+_draft/

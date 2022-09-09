@@ -1,4 +1,10 @@
-# Pycon Workshop Bloomreach
+---
+layout: home
+title: Pycon Workshop Bloomreach
+permalink: /
+---
+
+## Description
 
 On our workshop we will implement one of our hiring assignments.
 
@@ -10,5 +16,4 @@ There are multiple checkpoints. On start of each page, there is a note from whic
 missed something.
 
 During the workshop there are multiple questions, which I also will ask you. There is also answer in collapsible
-section. **Please do not cheat and don't look for the answer before the question is answered**. 
-
+section. **Please do not cheat and don't look for the answer before the questions are answered**. 
