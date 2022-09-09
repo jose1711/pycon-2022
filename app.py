@@ -24,11 +24,11 @@ def hello():
 Success: TypeAlias = bool
 
 
-async def fetch(delay_seconds: float) -> tuple[Success, dict]:
-    await asyncio.sleep(delay_seconds)
+async def fetch(delay_seconds: float, url: str = BLOOMREACH_SERVER) -> tuple[Success, dict]:
+    time.sleep(delay_seconds)
     async with ClientSession() as session:
         try:
-            async with session.get(BLOOMREACH_SERVER) as response:
+            async with session.get(url) as response:
                 if response.status == HTTPStatus.OK:
                     try:
                         result_data = await response.json()
@@ -65,6 +65,32 @@ def get_and_validate_timeout() -> None | float:
 
 def out_of_time(timeout: None | float) -> bool:
     return timeout is not None and timeout <= 0
+
+
+async def get_first_successful_request(unfinished_tasks: list[asyncio.Task], timeout: None | float):
+    timeout_remaining = timeout
+
+    while not out_of_time(timeout_remaining) and unfinished_tasks:
+        start = time.monotonic()
+        finished_tasks, unfinished_tasks = await asyncio.wait(
+            unfinished_tasks, return_when=asyncio.FIRST_COMPLETED, timeout=timeout_remaining
+        )
+
+        for finished_task in finished_tasks:
+            success, result = finished_task.result()
+            if success:
+                return success, result
+
+        end = time.monotonic()
+        timeout_remaining = timeout_remaining - (end - start) if timeout_remaining is not None else timeout_remaining
+
+    for unfinished_task in unfinished_tasks:
+        unfinished_task.cancel()
+
+    if out_of_time(timeout_remaining):
+        raise RequestTimeout()
+
+    return False, {}
 
 
 @app.get("/api/smart")
