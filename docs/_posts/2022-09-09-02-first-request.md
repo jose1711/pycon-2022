@@ -10,10 +10,10 @@ layout: post
 >
 > `git checkout start`
 
-It is always good to split complex problem to multiple smaller one. We will do the same thing with our assignment. So,
+It is always good to split complex problem into multiple smaller ones. We will do the same thing with our assignment. So,
 let's now focus only on the first request.
 
-## Triggering first request
+## Triggering the first request
 
 To get the response from our testing server we can use python library `requests`.
 
@@ -38,7 +38,7 @@ To get the response from our testing server we can use python library `requests`
         if response.status_code == HTTPStatus.OK:
             pass
     ```
-4. Based on the status code, return a response from our endpoint .
+4. Based on the status code, return a response from our endpoint.
     ```python
    @app.get("/api/smart")
    def smart_api_requester():
