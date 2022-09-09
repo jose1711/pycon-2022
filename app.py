@@ -101,29 +101,10 @@ async def smart_api_requester():
         asyncio.create_task(fetch(delay_seconds=WAIT_BEFORE_NEXT_REQUEST_SECONDS)),
         asyncio.create_task(fetch(delay_seconds=WAIT_BEFORE_NEXT_REQUEST_SECONDS)),
     ]
-    timeout_remaining = timeout_seconds
 
-    while not out_of_time(timeout_remaining) and unfinished_tasks:
-        start = time.monotonic()
-        finished_tasks, unfinished_tasks = await asyncio.wait(
-            unfinished_tasks, return_when=asyncio.FIRST_COMPLETED, timeout=timeout_remaining
-        )
+    success, result = await get_first_successful_request(unfinished_tasks, timeout_seconds)
 
-        for finished_task in finished_tasks:
-            success, result = finished_task.result()
-            if success:
-                return jsonify(success=success, response=result)
-
-        end = time.monotonic()
-        timeout_remaining = timeout_remaining - (end - start) if timeout_remaining is not None else timeout_remaining
-
-    for unfinished_task in unfinished_tasks:
-        unfinished_task.cancel()
-
-    if out_of_time(timeout_remaining):
-        raise RequestTimeout()
-
-    return jsonify(success=False, response={})
+    return jsonify(success=success, result=result)
 
 
 if __name__ == "__main__":
