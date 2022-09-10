@@ -6,7 +6,7 @@ category: Jekyll
 layout: post
 ---
 
-# About BLoomreach
+# About Bloomreach
 
 Bloomreach is the leader in Commerce Experience™ — empowering brands to deliver customer journeys so personalized, they
 feel like magic. Bloomreach Experience, the digital experience platform built for commerce, includes three pillars:
@@ -20,7 +20,7 @@ Bayern München, and Marks & Spencer, and powers over $250 billion in commerce a
 
 ## Ondrej Unger
 
-![Speaker - Ondrej Unger](/assets/images/ondrej_unger.jpg)
+![Speaker - Ondrej Unger](/pycon-2022/assets/images/ondrej_unger.jpg)
 
 In his first year of university, Ondrej started as a QA engineer at Exponea (now a part of Bloomreach). After five
 years, he is still working at Bloomreach as a backend developer in the Analytics team. The team develops and maintains
@@ -29,7 +29,7 @@ development processes and the happiness of the team.
 
 ## Marek Bruchatý
 
-![Speaker - Marek Bruchatý](/assets/images/marek_bruchaty.jpg)
+![Speaker - Marek Bruchatý](/pycon-2022/assets/images/marek_bruchaty.jpg)
 
 Marek is a software engineer at Bloomreach who leads the technological direction of the AI team. Marek has many years of
 experience in the design and development of products using artificial intelligence and Python.
