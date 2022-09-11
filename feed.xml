@@ -1,0 +1,657 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="/pycon-2022/feed.xml" rel="self" type="application/atom+xml" /><link href="/pycon-2022/" rel="alternate" type="text/html" /><updated>2022-09-11T08:12:09+00:00</updated><id>/pycon-2022/feed.xml</id><title type="html">Pycon Workshop Bloomreach</title><subtitle>On Pycon 2022 Bloomreach reveals their hiring assignment. On this pages are documents describing how to implement it,  and questions that will help you to understand better the assignment and things used in the implementation.</subtitle><author><name>Ondrej Unger</name></author><entry><title type="html">00 - Assignment</title><link href="/pycon-2022/assignment/2022-09-09-00-assigment.html" rel="alternate" type="text/html" title="00 - Assignment" /><published>2022-09-09T00:00:00+00:00</published><updated>2022-09-09T00:00:00+00:00</updated><id>/pycon-2022/assignment/00-assigment</id><content type="html" xml:base="/pycon-2022/assignment/2022-09-09-00-assigment.html"><![CDATA[<h2 id="the-task">The Task</h2>
+
+<h3 id="description">Description</h3>
+
+<p><strong>Write an HTTP server.</strong> You can choose to implement it either in <strong>Python</strong> or <strong>Go</strong>. The server
+should serve one endpoint:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">smart</span>
+</code></pre></div></div>
+
+<p>Requirements for the endpoint:</p>
+
+<ul>
+  <li>The endpoint performs up to 3 HTTP requests to the Exponea Testing HTTP Server
+and returns the first successful response.</li>
+  <li>Instead of firing all 3 requests at once, the endpoint fires only a single request at the
+beginning.
+    <ul>
+      <li>If there is a successful response within 300 milliseconds, the endpoint returns
+this response and does not fire other requests.</li>
+      <li>If there is no successful response within 300 milliseconds, it fires another 2
+requests. Then it returns the first successful response from any of the 3
+requests (including the first one).</li>
+    </ul>
+  </li>
+  <li>The endpoint accepts a timeout parameter - an integer value specifying time in
+milliseconds. The endpoint always returns a response within the given timeout. If the timeout is not specified, the
+endpoint should respond with the first successful response from our testing server.</li>
+  <li>If there is no successful response within this timeout, the endpoint returns an error.</li>
+</ul>
+
+<h3 id="notes">Notes</h3>
+
+<ul>
+  <li>The endpoint returns a JSON response.</li>
+  <li>A successful response is defined as a response that returns HTTP status code 200
+and has a valid payload.</li>
+  <li>Your endpoints should return a JSON response that will contain successful responses from Bloomreach
+testing server.</li>
+</ul>
+
+<h3 id="bloomreach-testing-http-server">Bloomreach Testing HTTP Server</h3>
+
+<p>The <em>Bloomreach Testing HTTP Server</em> serves a single endpoint:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">GET</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">exponea</span><span class="o">-</span><span class="n">engineering</span><span class="o">-</span><span class="n">assignment</span><span class="p">.</span><span class="n">appspot</span><span class="p">.</span><span class="n">com</span><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">work</span>
+</code></pre></div></div>
+
+<p>It performs some work (taking roughly 100-600 ms) and then returns the time it took to
+respond as a JSON response. Example response:
+<code class="language-plaintext highlighter-rouge">{“time”: 160}</code></p>
+
+<p>Note: The server is not very reliable , which means that it does not always return a
+successful response.</p>
+
+<h3 id="what-we-seek">What we seek</h3>
+
+<ul>
+  <li>Performance - we expect that the requests to ExponeaTesting HTTP Server will be
+done concurrently. We will test how your server implementation behaves under load -
+both in terms of requests per second, and the number of concurrent requests.</li>
+  <li>Robust implementation - your server should behave correctly in presence of
+errors. Exponea Testing HTTP Server is infamously known for being unreliable.
+Also, the implementation should not leak resources (stuck threads / goroutines /
+connections for unknown time).</li>
+  <li>Readable, maintainable implementation - for example, prefer well-known open
+source libraries, with licenses that allow them to be used commercially.</li>
+</ul>
+
+<h3 id="if-you-want-to-shine">If you want to shine…</h3>
+
+<p>Is the task too easy for you? Don’t worry, we have prepared a few extras for you:</p>
+
+<ul>
+  <li>Write tests for your implementation.</li>
+  <li>Instrument your code with tools that will make debugging production easier - logging,
+monitoring, tracing. We need a way to check if Bloomreach Testing HTTP Server is
+behaving well in production.</li>
+  <li>Include Dockerfile that can be used to build and run the server.</li>
+  <li>Attach a discussion about code behavior - knowledge cases, how it behaves in certain
+conditions, performance characteristics, resource requirements, etc. How many
+concurrent requests can the server handle? How would you protect the server against
+being overloaded?</li>
+</ul>]]></content><author><name>Ondrej Unger</name></author><category term="Assignment" /><summary type="html"><![CDATA[The Task]]></summary></entry><entry><title type="html">01 - Start</title><link href="/pycon-2022/implementation/2022-09-09-01-start.html" rel="alternate" type="text/html" title="01 - Start" /><published>2022-09-09T00:00:00+00:00</published><updated>2022-09-09T00:00:00+00:00</updated><id>/pycon-2022/implementation/01-start</id><content type="html" xml:base="/pycon-2022/implementation/2022-09-09-01-start.html"><![CDATA[<ol>
+  <li>
+    <p>Clone the following repository:</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git clone https://github.com/UOndro/pycon-2022.git
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Then checkout <code class="language-plaintext highlighter-rouge">start</code> branch
+<code class="language-plaintext highlighter-rouge">
+git checkout start
+</code>`</p>
+  </li>
+</ol>
+
+<p>We get a very basic skeleton of our application without the actual implementation. In our workshop, we will try to
+finish
+the implementation so all the cases in our assignment is covered.</p>
+
+<h2 id="setting-up-the-python-environment">Setting up the python environment</h2>
+
+<ol>
+  <li>Create python virtual environment
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> python3.10 -m venv venv
+</code></pre></div>    </div>
+  </li>
+  <li>Activate python virtual environment
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> source venv/bin/activate
+</code></pre></div>    </div>
+  </li>
+  <li>Install requirements
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> pip install -r requirements.txt
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<blockquote>
+  <p><strong><em>QUESTION:</em></strong> Why is it good to create and use the virtual environment?</p>
+</blockquote>
+
+<details><summary>Click on me for the answer!</summary>
+<p>Using the virtual environment allows you to have different dependencies for each project. This means you can have
+different version of python packages. In addition to that, you can easily add or remove a packages without affecting
+other projects.</p>
+
+</details>
+
+<h2 id="test-the-application">Test the application</h2>
+
+<p>After successfully setting your environment, you should be able to start your application.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">python</span>
+<span class="n">app</span><span class="p">.</span><span class="n">py</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p><strong><em>QUESTION:</em></strong>  For running our server we picked web framework Flask. Do you know any python alternatives to Flask?
+Does this alternative have any advantages/disadvantages compared to Flask?</p>
+</blockquote>
+
+<details><summary>Click on me for the answer!</summary>
+<p>There are many python web frameworks, e.g. FastAPI, Django, Starlette, and so on. Each of them has different
+advantages/disadvantages, e.g. Starlette is ideal for async programs. FastAPI also uses Starlette, but also
+provide more functionality. I picked flask, because we use it in Bloomreach.</p>
+
+</details>]]></content><author><name>Ondrej Unger</name></author><category term="implementation" /><summary type="html"><![CDATA[Clone the following repository:]]></summary></entry><entry><title type="html">02 - First Request</title><link href="/pycon-2022/implementation/2022-09-09-02-first-request.html" rel="alternate" type="text/html" title="02 - First Request" /><published>2022-09-09T00:00:00+00:00</published><updated>2022-09-09T00:00:00+00:00</updated><id>/pycon-2022/implementation/02-first-request</id><content type="html" xml:base="/pycon-2022/implementation/2022-09-09-02-first-request.html"><![CDATA[<blockquote>
+  <p><strong><em>BRANCH:</em></strong>  You can start from the branch <code class="language-plaintext highlighter-rouge">start</code>.</p>
+
+  <p><code class="language-plaintext highlighter-rouge">git checkout start</code></p>
+</blockquote>
+
+<p>It is always good to split complex problem into multiple smaller ones. We will do the same thing with our assignment. So,
+let’s now focus only on the first request.</p>
+
+<h2 id="triggering-the-first-request">Triggering the first request</h2>
+
+<p>To get the response from our testing server we can use python library <code class="language-plaintext highlighter-rouge">requests</code>.</p>
+
+<ol>
+  <li>
+    <p>Import the <code class="language-plaintext highlighter-rouge">requests</code> library.</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="kn">import</span> <span class="nn">requests</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Get the response from our testing server.</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"/api/smart"</span><span class="p">)</span>
+ <span class="k">def</span> <span class="nf">smart_api_requester</span><span class="p">():</span>
+     <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">BLOOMREACH_SERVER</span><span class="p">)</span>
+</code></pre></div>    </div>
+  </li>
+  <li>Check the status code of the response.
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"/api/smart"</span><span class="p">)</span>
+ <span class="k">def</span> <span class="nf">smart_api_requester</span><span class="p">():</span>
+     <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">BLOOMREACH_SERVER</span><span class="p">)</span>
+     <span class="k">if</span> <span class="n">response</span><span class="p">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">HTTPStatus</span><span class="p">.</span><span class="n">OK</span><span class="p">:</span>
+         <span class="k">pass</span>
+</code></pre></div>    </div>
+  </li>
+  <li>Based on the status code, return a response from our endpoint.
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"/api/smart"</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">smart_api_requester</span><span class="p">():</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">BLOOMREACH_SERVER</span><span class="p">)</span>
+   
+    <span class="k">if</span> <span class="n">response</span><span class="p">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">HTTPStatus</span><span class="p">.</span><span class="n">OK</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="n">response</span><span class="p">.</span><span class="n">json</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</code></pre></div>    </div>
+  </li>
+</ol>]]></content><author><name>Ondrej Unger</name></author><category term="implementation" /><summary type="html"><![CDATA[BRANCH: You can start from the branch start. git checkout start]]></summary></entry><entry><title type="html">03 - Timeout</title><link href="/pycon-2022/implementation/2022-09-09-03-timeout.html" rel="alternate" type="text/html" title="03 - Timeout" /><published>2022-09-09T00:00:00+00:00</published><updated>2022-09-09T00:00:00+00:00</updated><id>/pycon-2022/implementation/03-timeout</id><content type="html" xml:base="/pycon-2022/implementation/2022-09-09-03-timeout.html"><![CDATA[<blockquote>
+  <p><strong><em>BRANCH:</em></strong>  You can start from the branch <code class="language-plaintext highlighter-rouge">first-request</code>.</p>
+
+  <p><code class="language-plaintext highlighter-rouge">git checkout first-request</code></p>
+</blockquote>
+
+<p>The client of our API can specify a timeout. The endpoint should always end in that timeout. If the timeout is not
+specified we will wait for the first successful response.</p>
+
+<h2 id="implementing-the-timeout-functionality">Implementing the timeout functionality</h2>
+
+<h3 id="get-the-timeout-parameter-from-the-request">Get the timeout parameter from the request.</h3>
+
+<ol>
+  <li>
+    <p>Import required packages.</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">jsonify</span><span class="p">,</span> <span class="n">redirect</span><span class="p">,</span> <span class="n">url_for</span><span class="p">,</span> <span class="n">request</span>
+ <span class="kn">from</span> <span class="nn">http</span> <span class="kn">import</span> <span class="n">HTTPStatus</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Get the timeout from request args.</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"/api/smart"</span><span class="p">)</span>
+ <span class="k">def</span> <span class="nf">smart_api_requester</span><span class="p">():</span>
+     <span class="n">timeout</span> <span class="o">=</span> <span class="n">request</span><span class="p">.</span><span class="n">args</span><span class="p">[</span><span class="s">"timeout"</span><span class="p">]</span>
+     <span class="p">...</span>
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<blockquote>
+  <p><strong><em>QUESTION:</em></strong>  Do you spot any problems?</p>
+</blockquote>
+
+<details><summary>Click on me for the answer!</summary>
+<ul>
+  <li>We are missing validation. Let’s add it.
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="nf">milliseconds_to_seconds</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">value</span> <span class="o">/</span> <span class="mi">1000</span>
+    
+    
+  <span class="k">def</span> <span class="nf">get_and_validate_timeout</span><span class="p">()</span>  <span class="o">-&gt;</span> <span class="bp">None</span> <span class="o">|</span> <span class="nb">float</span><span class="p">:</span>
+      <span class="n">timeout</span> <span class="o">=</span> <span class="n">request</span><span class="p">.</span><span class="n">args</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"timeout"</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+          <span class="k">return</span> <span class="n">timeout</span>
+    
+      <span class="k">try</span><span class="p">:</span>
+          <span class="n">converted_timeout</span> <span class="o">=</span> <span class="n">milliseconds_to_seconds</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">timeout</span><span class="p">))</span>
+      <span class="k">except</span> <span class="nb">ValueError</span><span class="p">:</span>
+          <span class="k">raise</span> <span class="n">BadRequest</span><span class="p">(</span><span class="s">"Timeout has to be integer value."</span><span class="p">)</span>
+    
+      <span class="k">if</span> <span class="n">converted_timeout</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+          <span class="k">raise</span> <span class="n">BadRequest</span><span class="p">(</span><span class="s">"Timeout has to be positive non zero value."</span><span class="p">)</span>
+    
+      <span class="k">return</span> <span class="n">converted_timeout</span>
+    
+    
+   <span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"/api/smart"</span><span class="p">)</span>
+   <span class="k">def</span> <span class="nf">smart_api_requester</span><span class="p">():</span>
+       <span class="n">timeout_seconds</span> <span class="o">=</span> <span class="n">get_and_validate_timeout</span><span class="p">()</span>
+</code></pre></div>    </div>
+  </li>
+  <li>Test timeout arguments.
+    <ul>
+      <li>http://127.0.0.1:8081/api/smart?timeout=0</li>
+      <li>http://127.0.0.1:8081/api/smart?timeout=nonumber</li>
+      <li>http://127.0.0.1:8081/api/smart?timeout=10</li>
+    </ul>
+
+    <p>The first two requests should fail with the bad request status code. The last one should pass.</p>
+  </li>
+</ul>
+
+</details>
+
+<p><br /></p>
+<h3 id="end-after-the-timeout-is-reached">End after the timeout is reached.</h3>
+
+<blockquote>
+  <p><strong><em>QUESTION:</em></strong> How could we implement this? We need to wait for the response and also check if the timeout is not
+reached.</p>
+</blockquote>
+
+<details><summary>Click on me for the answer!</summary>
+<p>We can use asynchronous features of python. This allows you to write concurrent code.</p>
+<blockquote>
+  <p><strong><em>QUESTION:</em></strong> What is the difference between parallelism and concurrency? Is it better to use asynchronous
+framework instead of multiprocessing or threading?</p>
+</blockquote>
+
+<details><summary>Click on me for the answer!</summary>
+<p><strong>Parallelism</strong> consists of performing multiple operations at the same time.</p>
+
+<p><strong>Concurrency</strong> is a slightly broader term than parallelism. It suggests that multiple tasks have the ability to run
+in an overlapping manner. (There’s a saying that concurrency does not imply parallelism.)</p>
+
+<p>Threads consume more memory because they need to have their own stack. We also need to secure the thread safety.
+The same thing goes with multiprocessing. Multiprocessing works well if we have multiple CPUs and our processes are
+independent - we don’t need to provide thread safety.</p>
+
+<p>On the other hand, async is ideal if we have many I/O operations, e.g. waiting for server to respond, multiple writes
+into the file and so on.</p>
+
+<p>Source: <a href="https://realpython.com/async-io-python/">Async IO python</a></p>
+
+</details>
+<p><br />
+So, let’s create an async program.</p>
+
+<ol>
+  <li>First we need to install flask with async, so our server can be run asynchronously.
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pip</span> <span class="n">install</span> <span class="n">flask</span><span class="p">[</span><span class="k">async</span><span class="p">]</span><span class="o">==</span><span class="mf">2.2</span><span class="p">.</span><span class="mi">2</span>
+</code></pre></div>    </div>
+  </li>
+  <li>After that, we need to import required packages.
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">aiohttp</span> <span class="kn">import</span> <span class="n">ClientSession</span>
+</code></pre></div>    </div>
+  </li>
+  <li>Create the async request.
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Success</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="nb">bool</span>
+      
+      
+<span class="k">async</span> <span class="k">def</span> <span class="nf">fetch</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Success</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">ClientSession</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">async</span> <span class="k">with</span> <span class="n">session</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">BLOOMREACH_SERVER</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">response</span><span class="p">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">HTTPStatus</span><span class="p">.</span><span class="n">OK</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">result_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">response</span><span class="p">.</span><span class="n">json</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="n">ContentTypeError</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="bp">False</span><span class="p">,</span> <span class="p">{}</span>
+      
+                    <span class="k">return</span> <span class="bp">True</span><span class="p">,</span> <span class="n">result_data</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">False</span><span class="p">,</span> <span class="p">{}</span>
+        <span class="k">except</span> <span class="nb">Exception</span><span class="p">:</span>
+            <span class="c1"># Catch any session error (e.g. timeout)
+</span>            <span class="k">return</span> <span class="bp">False</span><span class="p">,</span> <span class="p">{}</span>
+</code></pre></div>    </div>
+  </li>
+  <li>Call async request from our route.
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"/api/smart"</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">smart_api_requester</span><span class="p">():</span>
+    <span class="n">timeout_seconds</span> <span class="o">=</span> <span class="n">get_and_validate_timeout</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">success</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="p">.</span><span class="n">wait_for</span><span class="p">(</span><span class="n">fetch</span><span class="p">(),</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout_seconds</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">asyncio</span><span class="p">.</span><span class="nb">TimeoutError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">RequestTimeout</span><span class="p">()</span>
+      
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="n">success</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+</details>]]></content><author><name>Ondrej Unger</name></author><category term="implementation" /><summary type="html"><![CDATA[BRANCH: You can start from the branch first-request. git checkout first-request]]></summary></entry><entry><title type="html">04 - All request</title><link href="/pycon-2022/implementation/2022-09-09-04-all-request.html" rel="alternate" type="text/html" title="04 - All request" /><published>2022-09-09T00:00:00+00:00</published><updated>2022-09-09T00:00:00+00:00</updated><id>/pycon-2022/implementation/04-all-request</id><content type="html" xml:base="/pycon-2022/implementation/2022-09-09-04-all-request.html"><![CDATA[<blockquote>
+  <p><strong><em>BRANCH:</em></strong>  You can start from the branch <code class="language-plaintext highlighter-rouge">timeout</code>.</p>
+
+  <p><code class="language-plaintext highlighter-rouge">git checkout timeout</code></p>
+</blockquote>
+
+<p>We were able to trigger the first request and if it has not finished in the specified time, we will raise the
+timeout error.</p>
+
+<p>Now, we are going to implement the second and the third request. Those two requests should be triggered after 300ms from
+the first one. In addition, they should be triggered at once, and we should return the first successful. If the first
+request finishes after 300ms, but before the second and third, we will return it.</p>
+
+<h2 id="implementing-the-second-and-third-request">Implementing the second and third request</h2>
+
+<p>As you might guess, all our requests will be done asynchronously. We need to secure that the second and the third
+request is triggered after 300ms after the first one.</p>
+
+<p> 1. We are going to postpone the fetch by a specific time.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="k">async</span> <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Success</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay_seconds</span><span class="p">)</span>
+
+
+<span class="p">...</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p><strong><em>QUESTION:</em></strong> Why we used <code class="language-plaintext highlighter-rouge">asyncio.sleep</code> and no classic one time.sleep?</p>
+</blockquote>
+
+<details><summary>Click on me for the answer!</summary>
+<p>When time.sleep(x) is called, it will block the entire execution of the script, and it will be put on hold, just
+frozen, doing nothing. But when you call await asyncio.sleep(x), it will ask the event loop to run something else
+while your await statement finishes its execution.</p>
+</details>
+
+<p> 2. Create tasks.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"/api/smart"</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">smart_api_requester</span><span class="p">():</span>
+    <span class="n">timeout_seconds</span> <span class="o">=</span> <span class="n">get_and_validate_timeout</span><span class="p">()</span>
+    <span class="n">unfinished_tasks</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="mi">0</span><span class="p">)),</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="n">WAIT_BEFORE_NEXT_REQUEST_SECONDS</span><span class="p">)),</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="n">WAIT_BEFORE_NEXT_REQUEST_SECONDS</span><span class="p">)),</span>
+    <span class="p">]</span>
+    <span class="p">...</span>
+</code></pre></div></div>
+
+<p>As we can see, we created 3 tasks. The first request won’t be delayed, the second and third one will be delayed for the
+time specified in the assignment.</p>
+
+<p> 3. Execute those task.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">out_of_time</span><span class="p">(</span><span class="n">timeout</span><span class="p">:</span> <span class="bp">None</span> <span class="o">|</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">timeout</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+
+
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"/api/smart"</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">smart_api_requester</span><span class="p">():</span>
+    <span class="n">timeout_seconds</span> <span class="o">=</span> <span class="n">get_and_validate_timeout</span><span class="p">()</span>
+    <span class="n">unfinished_tasks</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="mi">0</span><span class="p">)),</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="n">WAIT_BEFORE_NEXT_REQUEST_SECONDS</span><span class="p">)),</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="n">WAIT_BEFORE_NEXT_REQUEST_SECONDS</span><span class="p">)),</span>
+    <span class="p">]</span>
+    <span class="n">timeout_remaining</span> <span class="o">=</span> <span class="n">timeout_seconds</span>
+
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">out_of_time</span><span class="p">(</span><span class="n">timeout_remaining</span><span class="p">)</span> <span class="ow">and</span> <span class="n">unfinished_tasks</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="p">.</span><span class="n">monotonic</span><span class="p">()</span>
+        <span class="n">finished_tasks</span><span class="p">,</span> <span class="n">unfinished_tasks</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="p">.</span><span class="n">wait</span><span class="p">(</span>
+            <span class="n">unfinished_tasks</span><span class="p">,</span> <span class="n">return_when</span><span class="o">=</span><span class="n">asyncio</span><span class="p">.</span><span class="n">FIRST_COMPLETED</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout_remaining</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">finished_task</span> <span class="ow">in</span> <span class="n">finished_tasks</span><span class="p">:</span>
+            <span class="n">success</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">finished_task</span><span class="p">.</span><span class="n">result</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="n">success</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="p">.</span><span class="n">monotonic</span><span class="p">()</span>
+        <span class="n">timeout_remaining</span> <span class="o">=</span> <span class="n">timeout_remaining</span> <span class="o">-</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="k">if</span> <span class="n">timeout_remaining</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">timeout_remaining</span>
+
+    <span class="k">if</span> <span class="n">out_of_time</span><span class="p">(</span><span class="n">timeout_remaining</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">RequestTimeout</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="p">{})</span>
+</code></pre></div></div>
+
+<p>We wait for the first task to finish. However, this task could finish with an error or with not successful response.
+Therefor, we need to repeat our loop till we don’t receive the first successful response, or we are not out of time.</p>
+
+<blockquote>
+  <p><strong><em>QUESTION:</em></strong> There is still one problem in how we handle our tasks, can you spot the problem?</p>
+</blockquote>
+
+<details><summary>Click on me for the answer!</summary>
+<p>If we got successful response, we will return it, but there might still be two tasks in the event loop.
+As we don’t need the result from them, we can cancel them.</p>
+
+<ul>
+  <li>Cancel unfinished tasks
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="p">...</span>      
+ <span class="k">for</span> <span class="n">unfinished_task</span> <span class="ow">in</span> <span class="n">unfinished_tasks</span><span class="p">:</span>
+     <span class="n">unfinished_task</span><span class="p">.</span><span class="n">cancel</span><span class="p">()</span>
+          
+ <span class="k">if</span> <span class="n">out_of_time</span><span class="p">(</span><span class="n">timeout_remaining</span><span class="p">):</span>
+     <span class="k">raise</span> <span class="n">RequestTimeout</span><span class="p">()</span>
+ <span class="p">...</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+</details>]]></content><author><name>Ondrej Unger</name></author><category term="implementation" /><summary type="html"><![CDATA[BRANCH: You can start from the branch timeout. git checkout timeout]]></summary></entry><entry><title type="html">05 - Add tests</title><link href="/pycon-2022/implementation/2022-09-09-05-add-tests.html" rel="alternate" type="text/html" title="05 - Add tests" /><published>2022-09-09T00:00:00+00:00</published><updated>2022-09-09T00:00:00+00:00</updated><id>/pycon-2022/implementation/05-add-tests</id><content type="html" xml:base="/pycon-2022/implementation/2022-09-09-05-add-tests.html"><![CDATA[<blockquote>
+  <p><strong><em>BRANCH:</em></strong>  You can start from the branch <code class="language-plaintext highlighter-rouge">all-requests</code>.</p>
+
+  <p><code class="language-plaintext highlighter-rouge">git checkout all-requests</code></p>
+</blockquote>
+
+<p>Finally, we are going to add some tests.</p>
+
+<h2 id="add-tests-for-fetch">Add tests for fetch</h2>
+
+<p>We are going to use very popular test framework <code class="language-plaintext highlighter-rouge">pytest</code>.</p>
+
+<p> 1. Create a test directory and test file.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir tests
+touch __init__.py
+touch test_fetch.py
+</code></pre></div></div>
+
+<p> 2. Install <code class="language-plaintext highlighter-rouge">pytest</code>, <code class="language-plaintext highlighter-rouge">pytest-asyncio</code> and <code class="language-plaintext highlighter-rouge">pytest-httpserver</code>.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip install pytest pytest-httpserver
+</code></pre></div></div>
+
+<p> 3. <code class="language-plaintext highlighter-rouge">pytest-httpserver</code> allows us to create a local server, which we will use in tests. To be able to use it, we
+need to
+modify <code class="language-plaintext highlighter-rouge">fetch</code> function.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">...</span>
+
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">BLOOMREACH_SERVER</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Success</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+    <span class="p">...</span>
+</code></pre></div></div>
+
+<p>We will pass the URL as parameter, so we can simply modify it.</p>
+
+<blockquote>
+  <p><strong><em>QUESTION:</em></strong> Do you know how this pattern is called?</p>
+</blockquote>
+
+<details><summary>Click on me for the answer!</summary>
+<p>This pattern is called Dependency Injection, where an object or function receives other objects or functions that it
+depends on.</p>
+
+</details>
+
+<p> 4. Create fetch tests.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+
+<span class="kn">import</span> <span class="nn">pytest</span>
+<span class="kn">from</span> <span class="nn">pytest_httpserver</span> <span class="kn">import</span> <span class="n">HTTPServer</span>
+<span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">Response</span>
+
+<span class="kn">from</span> <span class="nn">app</span> <span class="kn">import</span> <span class="n">fetch</span><span class="p">,</span> <span class="n">get_first_successful_request</span>
+
+
+<span class="k">def</span> <span class="nf">slow_response</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">time_to_wait_seconds</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+    <span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_to_wait_seconds</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">json</span><span class="p">.</span><span class="n">dumps</span><span class="p">({</span><span class="s">"time"</span><span class="p">:</span> <span class="n">time_to_wait_seconds</span><span class="p">}),</span> <span class="n">status</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">"application/json"</span><span class="p">)</span>
+
+
+<span class="o">@</span><span class="n">pytest</span><span class="p">.</span><span class="n">mark</span><span class="p">.</span><span class="n">asyncio</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">test_successful_fetch</span><span class="p">(</span><span class="n">httpserver</span><span class="p">:</span> <span class="n">HTTPServer</span><span class="p">):</span>
+    <span class="n">httpserver</span><span class="p">.</span><span class="n">expect_request</span><span class="p">(</span><span class="s">"/foobar"</span><span class="p">).</span><span class="n">respond_with_handler</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">slow_response</span><span class="p">,</span> <span class="n">time_to_wait_seconds</span><span class="o">=</span><span class="mf">0.2</span><span class="p">))</span>
+
+    <span class="n">success</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fetch</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">httpserver</span><span class="p">.</span><span class="n">url_for</span><span class="p">(</span><span class="s">"/foobar"</span><span class="p">))</span>
+
+    <span class="k">assert</span> <span class="n">success</span>
+    <span class="k">assert</span> <span class="p">{</span><span class="s">"time"</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">}</span> <span class="o">==</span> <span class="n">result</span>
+
+
+<span class="o">@</span><span class="n">pytest</span><span class="p">.</span><span class="n">mark</span><span class="p">.</span><span class="n">asyncio</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">test_unsuccessful_fetch</span><span class="p">(</span><span class="n">httpserver</span><span class="p">:</span> <span class="n">HTTPServer</span><span class="p">):</span>
+    <span class="n">httpserver</span><span class="p">.</span><span class="n">expect_request</span><span class="p">(</span><span class="s">"/foobar"</span><span class="p">).</span><span class="n">respond_with_handler</span><span class="p">(</span>
+        <span class="n">partial</span><span class="p">(</span><span class="n">slow_response</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">time_to_wait_seconds</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">success</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">fetch</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">httpserver</span><span class="p">.</span><span class="n">url_for</span><span class="p">(</span><span class="s">"/foobar"</span><span class="p">))</span>
+
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">success</span>
+</code></pre></div></div>
+
+<p>We created a simple handler that returns similar responses to our Bloomreach testing server. In the first test, we
+expect that server returns success and correct json. In the second one, we expect that success will be <code class="language-plaintext highlighter-rouge">false</code>.</p>
+
+<p> 4. Let’s create now test for first successful response. First we need to do a small refactoring.</p>
+
+<p>First move the code, which we would like to test, from app to a separate function.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">async</span> <span class="k">def</span> <span class="nf">get_first_successful_request</span><span class="p">(</span><span class="n">unfinished_tasks</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">asyncio</span><span class="p">.</span><span class="n">Task</span><span class="p">],</span> <span class="n">timeout</span><span class="p">:</span> <span class="bp">None</span> <span class="o">|</span> <span class="nb">float</span><span class="p">):</span>
+    <span class="n">timeout_remaining</span> <span class="o">=</span> <span class="n">timeout</span>
+
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">out_of_time</span><span class="p">(</span><span class="n">timeout_remaining</span><span class="p">)</span> <span class="ow">and</span> <span class="n">unfinished_tasks</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="p">.</span><span class="n">monotonic</span><span class="p">()</span>
+        <span class="n">finished_tasks</span><span class="p">,</span> <span class="n">unfinished_tasks</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="p">.</span><span class="n">wait</span><span class="p">(</span>
+            <span class="n">unfinished_tasks</span><span class="p">,</span> <span class="n">return_when</span><span class="o">=</span><span class="n">asyncio</span><span class="p">.</span><span class="n">FIRST_COMPLETED</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout_remaining</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">finished_task</span> <span class="ow">in</span> <span class="n">finished_tasks</span><span class="p">:</span>
+            <span class="n">success</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">finished_task</span><span class="p">.</span><span class="n">result</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">success</span><span class="p">,</span> <span class="n">result</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="p">.</span><span class="n">monotonic</span><span class="p">()</span>
+        <span class="n">timeout_remaining</span> <span class="o">=</span> <span class="n">timeout_remaining</span> <span class="o">-</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="k">if</span> <span class="n">timeout_remaining</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">timeout_remaining</span>
+
+    <span class="k">for</span> <span class="n">unfinished_task</span> <span class="ow">in</span> <span class="n">unfinished_tasks</span><span class="p">:</span>
+        <span class="n">unfinished_task</span><span class="p">.</span><span class="n">cancel</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">out_of_time</span><span class="p">(</span><span class="n">timeout_remaining</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">RequestTimeout</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="bp">False</span><span class="p">,</span> <span class="p">{}</span>
+</code></pre></div></div>
+
+<p>Then update the app function, so it uses our new function.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"/api/smart"</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">smart_api_requester</span><span class="p">():</span>
+    <span class="n">timeout_seconds</span> <span class="o">=</span> <span class="n">get_and_validate_timeout</span><span class="p">()</span>
+    <span class="n">unfinished_tasks</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="mi">0</span><span class="p">)),</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="n">WAIT_BEFORE_NEXT_REQUEST_SECONDS</span><span class="p">)),</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="n">WAIT_BEFORE_NEXT_REQUEST_SECONDS</span><span class="p">)),</span>
+    <span class="p">]</span>
+
+    <span class="n">success</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">get_first_successful_request</span><span class="p">(</span><span class="n">unfinished_tasks</span><span class="p">,</span> <span class="n">timeout_seconds</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="n">success</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p> 5. We cannot use one server as we did with Bloomreach testing server. The reason is that <code class="language-plaintext highlighter-rouge">pytest-httpserver</code>
+cannot process more than one server. So, we overcome this problem by creating multiple servers. Each running in
+different thread.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">pytest</span><span class="p">.</span><span class="n">fixture</span>
+<span class="k">def</span> <span class="nf">httpserver1</span><span class="p">(</span><span class="n">httpserver_ssl_context</span><span class="p">,</span> <span class="n">httpserver_listen_address</span><span class="p">):</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">HTTPServer</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">HTTPServer</span><span class="p">.</span><span class="n">DEFAULT_LISTEN_HOST</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">7001</span><span class="p">,</span> <span class="n">ssl_context</span><span class="o">=</span><span class="n">httpserver_ssl_context</span><span class="p">)</span>
+    <span class="n">server</span><span class="p">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="k">yield</span> <span class="n">server</span>
+    <span class="n">server</span><span class="p">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">server</span><span class="p">.</span><span class="n">is_running</span><span class="p">():</span>
+        <span class="n">server</span><span class="p">.</span><span class="n">stop</span><span class="p">()</span>
+
+
+<span class="o">@</span><span class="n">pytest</span><span class="p">.</span><span class="n">fixture</span>
+<span class="k">def</span> <span class="nf">httpserver2</span><span class="p">(</span><span class="n">httpserver_ssl_context</span><span class="p">,</span> <span class="n">httpserver_listen_address</span><span class="p">):</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">HTTPServer</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">HTTPServer</span><span class="p">.</span><span class="n">DEFAULT_LISTEN_HOST</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">7002</span><span class="p">,</span> <span class="n">ssl_context</span><span class="o">=</span><span class="n">httpserver_ssl_context</span><span class="p">)</span>
+    <span class="n">server</span><span class="p">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="k">yield</span> <span class="n">server</span>
+    <span class="n">server</span><span class="p">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">server</span><span class="p">.</span><span class="n">is_running</span><span class="p">():</span>
+        <span class="n">server</span><span class="p">.</span><span class="n">stop</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p> 6. The last test that we will implement will be getting the first successful response.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">pytest</span><span class="p">.</span><span class="n">mark</span><span class="p">.</span><span class="n">asyncio</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">test_first_successful_requests</span><span class="p">(</span><span class="n">httpserver</span><span class="p">:</span> <span class="n">HTTPServer</span><span class="p">,</span> <span class="n">httpserver1</span><span class="p">,</span> <span class="n">httpserver2</span><span class="p">):</span>
+    <span class="n">httpserver</span><span class="p">.</span><span class="n">expect_request</span><span class="p">(</span><span class="s">"/foo"</span><span class="p">).</span><span class="n">respond_with_handler</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">slow_response</span><span class="p">,</span> <span class="n">time_to_wait_seconds</span><span class="o">=</span><span class="mf">0.8</span><span class="p">))</span>
+    <span class="n">httpserver1</span><span class="p">.</span><span class="n">expect_request</span><span class="p">(</span><span class="s">"/foo"</span><span class="p">).</span><span class="n">respond_with_handler</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">slow_response</span><span class="p">,</span> <span class="n">time_to_wait_seconds</span><span class="o">=</span><span class="mf">0.2</span><span class="p">))</span>
+    <span class="n">httpserver2</span><span class="p">.</span><span class="n">expect_request</span><span class="p">(</span><span class="s">"/foo"</span><span class="p">).</span><span class="n">respond_with_handler</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">slow_response</span><span class="p">,</span> <span class="n">time_to_wait_seconds</span><span class="o">=</span><span class="mf">0.4</span><span class="p">))</span>
+
+    <span class="n">unfinished_tasks</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">httpserver</span><span class="p">.</span><span class="n">url_for</span><span class="p">(</span><span class="s">"/foo"</span><span class="p">))),</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">httpserver1</span><span class="p">.</span><span class="n">url_for</span><span class="p">(</span><span class="s">"/foo"</span><span class="p">))),</span>
+        <span class="n">asyncio</span><span class="p">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">delay_seconds</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">httpserver2</span><span class="p">.</span><span class="n">url_for</span><span class="p">(</span><span class="s">"/foo"</span><span class="p">))),</span>
+    <span class="p">]</span>
+    <span class="n">success</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">get_first_successful_request</span><span class="p">(</span><span class="n">unfinished_tasks</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">success</span>
+    <span class="k">assert</span> <span class="p">{</span><span class="s">"time"</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">}</span> <span class="o">==</span> <span class="n">result</span>
+</code></pre></div></div>
+
+<p>Each http server has same route, but with different sleep time. This means that the server with the lowest sleep time
+should answer first.</p>
+
+<blockquote>
+  <p><strong><em>QUESTION:</em></strong> Do you think we need more tests? If yes, what would they test?</p>
+</blockquote>
+
+<details><summary>Click on me for the answer!</summary>
+<p>We definitely miss tests that would validate if <code class="language-plaintext highlighter-rouge">get_first_successful_request</code> ends always in specified timeout. We also
+could add some tests that would validate what happens if the testing server reaches timeout or will respond with invalid
+content.</p>
+
+</details>]]></content><author><name>Ondrej Unger</name></author><category term="implementation" /><summary type="html"><![CDATA[BRANCH: You can start from the branch all-requests. git checkout all-requests]]></summary></entry></feed>
