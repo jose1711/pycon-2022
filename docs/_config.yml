@@ -4,8 +4,8 @@ longtitle:        Pycon Workshop Bloomreach
 author:           Ondrej Unger
 email:            ondrej.unger@bloomreach.com
 description: >- # this means to ignore newlines until
-  On Pycon 2022 Bloomreach reveals their hiring assignment. On this pages are documents describing how to implement it, 
-  and questions that will help you to understand better the assignment and things used in the implementation.
+  On Pycon 2022 Bloomreach reveals their hiring assignment. The following pages describe ways to implement it
+  including questions that will help you to understand better the assignment and tools used in the implementation.
 
 version:          1.0
 gitbook_version:  3.2.3
